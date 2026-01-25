@@ -1,0 +1,97 @@
+:root {
+  --bg: #ffffff;
+  --text: #1a1a1a;
+  --subtext: #4d4d4d;
+  --border: #e5e5e5;
+  --shadow: 0 8px 24px rgba(0,0,0,.12);
+  --shadow-heavy: 0 20px 48px rgba(0,0,0,.16);
+  --overlay: rgba(0,0,0,.4);
+  --accent: #0078d4;
+}
+
+* { box-sizing: border-box; }
+html,body { height: 100%; margin: 0; }
+body {
+  background: linear-gradient(135deg,#f0f4f8 0%,#e8eef5 50%,#dfe7f0 100%);
+  font-family: "Noto Sans SC",Segoe UI,system-ui,-apple-system,sans-serif;
+  overflow: hidden;
+}
+
+/* 初始弹窗 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+}
+.modal {
+  width: min(92vw,520px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-heavy);
+  text-align: left;
+  animation: modal-appear .3s cubic-bezier(.175,.885,.32,1.275) forwards;
+}
+.titlebar { display:flex; align-items:center; gap:8px; padding:12px 14px; background:#f3f3f3; border-bottom:1px solid var(--border); }
+.titlebar .icon { font-size:18px; }
+.titlebar .title { font-weight:700; }
+.content { padding:16px 16px 8px; color:var(--subtext); }
+.actions { padding:0 16px 16px; display:flex; gap:10px; justify-content:flex-end; }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:36px; padding:0 14px; border-radius:4px; border:1px solid var(--border); cursor:pointer; font-weight:600; background:#f7f7f7; }
+.btn.primary { background:var(--accent); color:#fff; border-color:#0a6ecf; }
+.btn:hover { filter:brightness(.98); }
+.btn.primary:hover { filter:brightness(1.05); }
+.btn:active { transform:translateY(1px); }
+
+/* 温馨提示弹窗 */
+.popup {
+  position: absolute;
+  width: 230px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  font-size: 13px;
+  line-height: 1.4;
+  user-select: none;
+  transform-origin: center;
+  overflow: hidden;
+}
+.popup .header { display:flex; align-items:center; gap:4px; padding:3px 8px; background:#f3f3f3; border-bottom:1px solid var(--border); }
+.popup .header .icon { font-size:12px; }
+.popup .header .title { font-weight:800; font-size:11px; }
+.popup .content { padding:6px 10px; font-size:18px; font-weight:600; text-align:center; }
+
+/* 主题色 */
+.popup.theme-blue .header { background:#e3f2fd; border-color:#bbdefb; }
+.popup.theme-blue .content { background:#f1f8ff; }
+.popup.theme-green .header { background:#e8f5e9; border-color:#c8e6c9; }
+.popup.theme-purple .header { background:#f3e5f5; border-color:#e1bee7; }
+.popup.theme-orange .header { background:#fff3e0; border-color:#ffe0b2; }
+.popup.theme-pink .header { background:#fce4ec; border-color:#f8bbd0; }
+
+/* 动画 */
+@keyframes modal-appear { 0%{opacity:0;transform:scale(.7) translateY(-20px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+@keyframes popup-from-bottom { 0%{opacity:0;transform:scale(.3) translateY(60px)} 60%{opacity:1;transform:scale(1.08) translateY(0)} 80%{transform:scale(.95)} 100%{opacity:1;transform:scale(1)} }
+.anim-bottom { animation: popup-from-bottom .55s cubic-bezier(.175,.885,.32,1.275) forwards; }
+
+/* 右下角小球 */
+#float-balls { position:fixed; right:30px; bottom:30px; display:flex; flex-direction:column; gap:15px; z-index:10000; }
+.float-ball { width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.7); backdrop-filter:blur(10px); border:2px solid rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,.2); transition:all .3s ease; }
+.float-ball span { color:#1a1a1a; font-size:12px; font-weight:600; }
+.float-ball:hover { background:rgba(255,255,255,.85); transform:scale(1.1); box-shadow:0 6px 30px rgba(0,0,0,.25); }
+.float-ball:active { transform:scale(.95); }
+
+/* 小球出现动画 */
+@keyframes ball-appear { 0%{opacity:0;transform:scale(0) translateX(100px)} 60%{opacity:1;transform:scale(1.15) translateX(0)} 80%{transform:scale(.9)} 100%{opacity:1;transform:scale(1)} }
+#float-balls.show .float-ball { animation: ball-appear .6s cubic-bezier(.175,.885,.32,1.275) forwards; }
+#float-balls.show .float-ball:nth-child(2){ animation-delay:.15s; }
+
+@media(max-width:640px){
+  #float-balls { right:20px; bottom:20px; gap:10px; }
+  .float-ball { width:40px; height:40px; }
+  .float-ball span { font-size:11px; }
+}
