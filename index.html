@@ -2,9 +2,50 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1, user-scalable=no" />
   <title id="pageTitle">神秘立冬礼物❄️</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* 修复：添加必要的动画和备用播放按钮样式 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.05); }
+    }
+    
+    .manual-play-btn {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: bold;
+      z-index: 10000;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+      cursor: pointer;
+      animation: fadeIn 0.5s ease-out, pulse 2s infinite;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .manual-play-btn:active {
+      transform: translateX(-50%) scale(0.95);
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* 确保模态框在 iOS 上居中正常 */
+    .modal-backdrop {
+      -webkit-overflow-scrolling: touch;
+    }
+  </style>
 </head>
 <body>
   <div id="app">
@@ -24,8 +65,14 @@
     <div id="popup-layer"></div>
   </div>
 
-  <!-- 无控件、隐藏的背景音频 -->
-  <audio id="bgMusic" preload="auto" loop style="display:none;"></audio>
+  <!-- 修复：添加 playsinline 和 webkit-playsinline 属性（iOS 必需） -->
+  <audio id="bgMusic" 
+         preload="auto" 
+         loop 
+         playsinline 
+         webkit-playsinline 
+         x5-playsinline 
+         style="display:none;"></audio>
 
   <script>
   (() => {
@@ -124,7 +171,13 @@
     document.getElementById('festTitle').textContent = title;
     document.getElementById('pageTitle').textContent = pageTitle;
     document.getElementById('giftWord').textContent  = giftWord;
-    document.getElementById('bgMusic').src = bgmFile;
+    
+    // 预先设置音频源
+    const audio = document.getElementById('bgMusic');
+    audio.src = bgmFile;
+    
+    // iOS 预加载策略：先静音加载
+    audio.load();
 
     const msgs = [
       '今天排位不连跪！','记得ban掉东皇~','记得躺好，不要掉队~','mvp 预定','野区我承包了',
@@ -157,16 +210,88 @@
       if (count < total) setTimeout(addOne, interval);
     }
 
-    document.getElementById('confirm-btn').addEventListener('click', () => {
+    // 修复：改进的音频播放逻辑，处理移动端限制
+    document.getElementById('confirm-btn').addEventListener('click', async () => {
       document.getElementById('start-backdrop').style.display = 'none';
-      const audio = document.getElementById('bgMusic');
-      audio.play().catch(err => {
-        console.log('播放失败:', err);
-        audio.load();
-        audio.play().catch(() => {});
-      });
+      
+      try {
+        // 确保音频上下文已准备好（针对 iOS）
+        if (audio.readyState < 2) { // HAVE_CURRENT_DATA
+          await new Promise((resolve, reject) => {
+            audio.addEventListener('canplaythrough', resolve, {once: true});
+            audio.addEventListener('error', reject, {once: true});
+            setTimeout(() => reject(new Error('加载超时')), 3000);
+          });
+        }
+        
+        // 尝试播放
+        await audio.play();
+        console.log('🎵 音频播放成功');
+        
+      } catch (err) {
+        console.error('⚠️ 播放被阻止:', err);
+        
+        // 方案 1：尝试静音播放（部分浏览器允许）
+        try {
+          audio.muted = true;
+          await audio.play();
+          console.log('🔇 静音播放成功，尝试恢复音量');
+          
+          // 延迟取消静音，给用户时间感知
+          setTimeout(() => {
+            audio.muted = false;
+          }, 800);
+          
+        } catch (mutedErr) {
+          // 方案 2：显示手动播放按钮
+          console.log('🎹 显示手动播放按钮');
+          showManualPlayButton();
+        }
+      }
+      
       addOne();
-    }, {once:true});
+    }, {once: true});
+
+    function showManualPlayButton() {
+      // 如果已经有按钮，不再添加
+      if (document.querySelector('.manual-play-btn')) return;
+      
+      const btn = document.createElement('button');
+      btn.className = 'manual-play-btn';
+      btn.innerHTML = '🔊 点击播放惊喜音效';
+      
+      btn.addEventListener('click', async () => {
+        try {
+          audio.muted = false;
+          audio.volume = 1.0;
+          await audio.play();
+          
+          // 播放成功后移除按钮
+          btn.style.animation = 'fadeIn 0.3s reverse forwards';
+          setTimeout(() => btn.remove(), 300);
+          
+        } catch (e) {
+          alert('播放失败，请检查是否开启静音模式');
+        }
+      });
+      
+      document.body.appendChild(btn);
+      
+      // 8秒后自动移除按钮
+      setTimeout(() => {
+        if (btn.parentNode) {
+          btn.style.animation = 'fadeIn 0.3s reverse forwards';
+          setTimeout(() => btn.remove(), 300);
+        }
+      }, 8000);
+    }
+    
+    // 兼容性：处理微信内置浏览器（WeChat）
+    if (typeof WeixinJSBridge !== 'undefined') {
+      document.addEventListener('WeixinJSBridgeReady', () => {
+        console.log('微信环境已就绪');
+      }, false);
+    }
   })();
   </script>
 </body>
